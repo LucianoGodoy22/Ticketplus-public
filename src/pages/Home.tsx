@@ -21,8 +21,11 @@ export default function Home() {
   useEffect(() => {
     const fetchEventos = async () => {
       try {
-        // En el futuro, esta URL apuntará al API Gateway / BFF
-        const response = await axios.get<Evento[]>('http://localhost:8080/api/bff/eventos');
+        // Obtenemos la URL base desde GitHub Secrets o usamos localhost por defecto
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        
+        // Concatenamos la ruta exacta
+        const response = await axios.get<Evento[]>(`${apiUrl}/api/bff/eventos`);
         const todosLosEventos = response.data;
         
         setEventosDestacados(todosLosEventos.filter(e => e.destacado));
