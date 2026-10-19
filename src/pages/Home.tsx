@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import CheckoutModal from '../components/CheckoutModal';
 
-// Usamos la misma estructura que definimos en el backend
 interface Evento {
   id: number;
   nombre: string;
@@ -17,8 +17,11 @@ export default function Home() {
   const [eventosDestacados, setEventosDestacados] = useState<Evento[]>([]);
   const [otrosEventos, setOtrosEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Estados para el Modal de Pago
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // La URL base ahora apuntará a tu API Gateway
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
@@ -39,35 +42,9 @@ export default function Home() {
     fetchEventos();
   }, [apiUrl]);
 
-  // Función para compra normal (Monto positivo -> ACK)
-  const comprarTicket = async (eventoId: number, precio: number) => {
-    try {
-      const payload = {
-        eventoId: eventoId,
-        emailUsuario: "cliente@ticketplus.com",
-        monto: precio
-      };
-      await axios.post(`${apiUrl}/api/bff/pagos`, payload);
-      alert("¡Pago procesado con éxito! Revisa los logs del ms-eventos para ver la simulación del PDF.");
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      alert("Ocurrió un error al intentar procesar el pago.");
-    }
-  };
-
-  // Función para forzar error (Monto negativo -> NACK -> DLQ)
-  const forzarErrorDLQ = async (eventoId: number) => {
-    try {
-      const payload = {
-        eventoId: eventoId,
-        emailUsuario: "cliente@ticketplus.com",
-        monto: -5000 // Monto negativo intencional
-      };
-      await axios.post(`${apiUrl}/api/bff/pagos`, payload);
-      alert("¡Pago simulado con error! Revisa el panel de RabbitMQ; el mensaje debería estar en la DLQ.");
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-    }
+  const abrirModalPago = (evento: Evento) => {
+    setEventoSeleccionado(evento);
+    setIsModalOpen(true);
   };
 
   if (loading) {
@@ -75,7 +52,7 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 relative">
       {/* Sección Eventos Destacados */}
       <section>
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Eventos Destacados</h2>
@@ -88,22 +65,11 @@ export default function Home() {
               <div className="p-5">
                 <h3 className="font-bold text-lg mb-1">{evento.nombre}</h3>
                 <p className="text-gray-500 text-sm mb-3">{evento.recinto} • {evento.fecha}</p>
-                
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => comprarTicket(evento.id, evento.precioDesde)}
-                    className="flex-1 bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-100 transition-colors">
-                    Comprar Tickets
-                  </button>
-                  
-                  {/* Botón para demostrar funcionalidad al profesor */}
-                  <button 
-                    onClick={() => forzarErrorDLQ(evento.id)}
-                    title="Forzar error para DLQ"
-                    className="bg-red-50 text-red-600 font-bold px-4 rounded-lg hover:bg-red-100 transition-colors">
-                    !
-                  </button>
-                </div>
+                <button 
+                  onClick={() => abrirModalPago(evento)}
+                  className="w-full bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                  Comprar Tickets
+                </button>
               </div>
             </div>
           ))}
@@ -130,24 +96,24 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm mb-4">{evento.recinto} • {evento.fecha}</p>
-                <div className="flex gap-2 mt-2">
-                  <button 
-                    onClick={() => comprarTicket(evento.id, evento.precioDesde)}
-                    className="flex-1 text-sm bg-blue-50 text-blue-600 font-semibold py-1.5 rounded hover:bg-blue-100 transition-colors">
-                    Comprar
-                  </button>
-                  <button 
-                    onClick={() => forzarErrorDLQ(evento.id)}
-                    title="Forzar error para DLQ"
-                    className="text-sm bg-red-50 text-red-600 font-bold px-3 rounded hover:bg-red-100 transition-colors">
-                    !
-                  </button>
-                </div>
+                <button 
+                  onClick={() => abrirModalPago(evento)}
+                  className="w-full text-sm bg-blue-50 text-blue-600 font-semibold py-2 rounded hover:bg-blue-100 transition-colors">
+                  Comprar
+                </button>
               </div>
             </div>
           ))}
         </div>
       </section>
+
+      {/* Renderizamos el Modal al final */}
+      <CheckoutModal 
+        evento={eventoSeleccionado}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        apiUrl={apiUrl}
+      />
     </div>
   );
 }
