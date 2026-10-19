@@ -18,13 +18,12 @@ export default function Home() {
   const [otrosEventos, setOtrosEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // La URL base ahora apuntará a tu API Gateway
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
   useEffect(() => {
     const fetchEventos = async () => {
       try {
-        // Obtenemos la URL base desde GitHub Secrets o usamos localhost por defecto
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        
-        // Concatenamos la ruta exacta
         const response = await axios.get<Evento[]>(`${apiUrl}/api/bff/eventos`);
         const todosLosEventos = response.data;
         
@@ -38,7 +37,38 @@ export default function Home() {
     };
 
     fetchEventos();
-  }, []);
+  }, [apiUrl]);
+
+  // Función para compra normal (Monto positivo -> ACK)
+  const comprarTicket = async (eventoId: number, precio: number) => {
+    try {
+      const payload = {
+        eventoId: eventoId,
+        emailUsuario: "cliente@ticketplus.com",
+        monto: precio
+      };
+      await axios.post(`${apiUrl}/api/bff/pagos`, payload);
+      alert("¡Pago procesado con éxito! Revisa los logs del ms-eventos para ver la simulación del PDF.");
+    } catch (error) {
+      console.error("Error al procesar el pago:", error);
+      alert("Ocurrió un error al intentar procesar el pago.");
+    }
+  };
+
+  // Función para forzar error (Monto negativo -> NACK -> DLQ)
+  const forzarErrorDLQ = async (eventoId: number) => {
+    try {
+      const payload = {
+        eventoId: eventoId,
+        emailUsuario: "cliente@ticketplus.com",
+        monto: -5000 // Monto negativo intencional
+      };
+      await axios.post(`${apiUrl}/api/bff/pagos`, payload);
+      alert("¡Pago simulado con error! Revisa el panel de RabbitMQ; el mensaje debería estar en la DLQ.");
+    } catch (error) {
+      console.error("Error al procesar el pago:", error);
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Cargando eventos...</div>;
@@ -53,15 +83,27 @@ export default function Home() {
           {eventosDestacados.map((evento) => (
             <div key={evento.id} className="min-w-[300px] md:min-w-[400px] snap-center bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0 border border-gray-100">
               <div className="h-48 bg-blue-100 w-full flex items-center justify-center text-blue-300">
-                {/* Placeholder para imagenUrl */}
                 <span className="font-medium">Sin Imagen</span>
               </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg mb-1">{evento.nombre}</h3>
                 <p className="text-gray-500 text-sm mb-3">{evento.recinto} • {evento.fecha}</p>
-                <button className="w-full bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-100 transition-colors">
-                  Comprar Tickets
-                </button>
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => comprarTicket(evento.id, evento.precioDesde)}
+                    className="flex-1 bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                    Comprar Tickets
+                  </button>
+                  
+                  {/* Botón para demostrar funcionalidad al profesor */}
+                  <button 
+                    onClick={() => forzarErrorDLQ(evento.id)}
+                    title="Forzar error para DLQ"
+                    className="bg-red-50 text-red-600 font-bold px-4 rounded-lg hover:bg-red-100 transition-colors">
+                    !
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -88,6 +130,19 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm mb-4">{evento.recinto} • {evento.fecha}</p>
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={() => comprarTicket(evento.id, evento.precioDesde)}
+                    className="flex-1 text-sm bg-blue-50 text-blue-600 font-semibold py-1.5 rounded hover:bg-blue-100 transition-colors">
+                    Comprar
+                  </button>
+                  <button 
+                    onClick={() => forzarErrorDLQ(evento.id)}
+                    title="Forzar error para DLQ"
+                    className="text-sm bg-red-50 text-red-600 font-bold px-3 rounded hover:bg-red-100 transition-colors">
+                    !
+                  </button>
+                </div>
               </div>
             </div>
           ))}
