@@ -17,23 +17,22 @@ export default function Home() {
   const [eventosDestacados, setEventosDestacados] = useState<Evento[]>([]);
   const [otrosEventos, setOtrosEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Estados para el Modal de Pago
+
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
   useEffect(() => {
     const fetchEventos = async () => {
       try {
         const response = await axios.get<Evento[]>(`${apiUrl}/api/bff/eventos`);
         const todosLosEventos = response.data;
-        
-        setEventosDestacados(todosLosEventos.filter(e => e.destacado));
-        setOtrosEventos(todosLosEventos.filter(e => !e.destacado));
+
+        setEventosDestacados(todosLosEventos.filter((e) => e.destacado));
+        setOtrosEventos(todosLosEventos.filter((e) => !e.destacado));
       } catch (error) {
-        console.error("Error cargando eventos:", error);
+        console.error('Error cargando eventos:', error);
       } finally {
         setLoading(false);
       }
@@ -52,22 +51,59 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-12 relative">
+    <div className="space-y-10 relative">
+      {/* Banner superior estilo Admin */}
+      <div className="bg-white border border-gray-200 border-t-4 border-t-orange-500 rounded-md p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Cartelera TicketPlus</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Descubre los próximos conciertos, espectáculos y compra tus entradas al instante.
+          </p>
+        </div>
+        <Link
+          to="/eventos"
+          className="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-800 hover:border-orange-500 hover:text-orange-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          Ver todos los eventos
+        </Link>
+      </div>
+
       {/* Sección Eventos Destacados */}
       <section>
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Eventos Destacados</h2>
+        <h2 className="text-xl font-bold mb-5 text-gray-900 border-l-4 border-orange-500 pl-3">
+          Eventos Destacados
+        </h2>
         <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 scrollbar-hide">
           {eventosDestacados.map((evento) => (
-            <div key={evento.id} className="min-w-[300px] md:min-w-[400px] snap-center bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0 border border-gray-100">
-              <div className="h-48 bg-blue-100 w-full flex items-center justify-center text-blue-300">
-                <span className="font-medium">Sin Imagen</span>
+            <div
+              key={evento.id}
+              className="min-w-[300px] md:min-w-[380px] snap-center bg-white rounded-md border border-gray-200 hover:border-orange-400 transition-colors overflow-hidden flex-shrink-0"
+            >
+              <div className="h-48 bg-orange-50 w-full flex items-center justify-center text-orange-400 border-b border-gray-100">
+                {evento.imagenUrl ? (
+                  <img
+                    src={evento.imagenUrl}
+                    alt={evento.nombre}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="font-medium text-sm">Sin Imagen</span>
+                )}
               </div>
               <div className="p-5">
-                <h3 className="font-bold text-lg mb-1">{evento.nombre}</h3>
-                <p className="text-gray-500 text-sm mb-3">{evento.recinto} • {evento.fecha}</p>
-                <button 
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className="font-bold text-lg text-gray-900">{evento.nombre}</h3>
+                  <span className="bg-orange-50 text-orange-700 border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded whitespace-nowrap">
+                    ${evento.precioDesde.toLocaleString('es-CL')}
+                  </span>
+                </div>
+                <p className="text-gray-500 text-sm mb-4">
+                  {evento.recinto} • {evento.fecha}
+                </p>
+                <button
                   onClick={() => abrirModalPago(evento)}
-                  className="w-full bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-md transition-colors text-sm"
+                >
                   Comprar Tickets
                 </button>
               </div>
@@ -78,27 +114,45 @@ export default function Home() {
 
       {/* Sección Otros Eventos */}
       <section>
-        <div className="flex justify-between items-end mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Próximos Eventos</h2>
-          <Link to="/eventos" className="text-blue-600 font-medium hover:underline">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-xl font-bold text-gray-900 border-l-4 border-orange-500 pl-3">
+            Próximos Eventos
+          </h2>
+          <Link to="/eventos" className="text-orange-600 text-sm font-medium hover:underline">
             Ver más →
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {otrosEventos.map((evento) => (
-            <div key={evento.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-40 bg-gray-100 w-full"></div>
+            <div
+              key={evento.id}
+              className="bg-white rounded-md border border-gray-200 hover:border-orange-400 transition-colors overflow-hidden"
+            >
+              <div className="h-40 bg-gray-100 w-full flex items-center justify-center text-gray-400 border-b border-gray-100">
+                {evento.imagenUrl ? (
+                  <img
+                    src={evento.imagenUrl}
+                    alt={evento.nombre}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs">Sin Imagen</span>
+                )}
+              </div>
               <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-gray-800">{evento.nombre}</h3>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <h3 className="font-bold text-gray-900">{evento.nombre}</h3>
+                  <span className="bg-orange-50 text-orange-700 border border-orange-200 text-xs font-semibold px-2 py-0.5 rounded whitespace-nowrap">
                     Desde ${evento.precioDesde.toLocaleString('es-CL')}
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm mb-4">{evento.recinto} • {evento.fecha}</p>
-                <button 
+                <p className="text-gray-500 text-sm mb-4">
+                  {evento.recinto} • {evento.fecha}
+                </p>
+                <button
                   onClick={() => abrirModalPago(evento)}
-                  className="w-full text-sm bg-blue-50 text-blue-600 font-semibold py-2 rounded hover:bg-blue-100 transition-colors">
+                  className="w-full text-sm bg-orange-50 text-orange-600 border border-orange-200 font-semibold py-2 rounded-md hover:bg-orange-500 hover:text-white transition-colors"
+                >
                   Comprar
                 </button>
               </div>
@@ -107,8 +161,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Renderizamos el Modal al final */}
-      <CheckoutModal 
+      <CheckoutModal
         evento={eventoSeleccionado}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

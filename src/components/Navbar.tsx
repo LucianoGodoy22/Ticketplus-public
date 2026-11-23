@@ -3,19 +3,26 @@ import { Ticket, User } from 'lucide-react';
 
 export default function Navbar() {
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white border-b-2 border-orange-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <Link to="/" className="flex items-center gap-2">
-            <Ticket className="h-8 w-8 text-blue-600" />
-            <span className="font-bold text-xl tracking-tight text-blue-900">Ticketplus</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <Ticket className="h-7 w-7 text-orange-500" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold text-xl tracking-tight text-gray-900">TicketPlus</span>
+              <span className="text-[11px] text-gray-500">Portal de Eventos</span>
+            </div>
           </Link>
-          <div className="flex items-center gap-6">
-            <Link to="/eventos" className="text-gray-600 hover:text-blue-600 font-medium">
+
+          <div className="flex items-center gap-4">
+            <Link
+              to="/eventos"
+              className="text-gray-700 hover:text-orange-600 hover:bg-orange-50 px-3 py-2 rounded-md font-medium text-sm transition-colors"
+            >
               Explorar Eventos
             </Link>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-              <User className="h-5 w-5" />
+            <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+              <User className="h-4 w-4" />
               <span>Iniciar Sesión</span>
             </button>
           </div>
